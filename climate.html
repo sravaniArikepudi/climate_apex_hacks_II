@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compost Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #8BC34A;
+            --dark: #2E7D32;
+            --light: #C8E6C9;
+            --accent: #FF9800;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            list-style: none;
+            background-color: var(--secondary);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .nav-tabs li {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .nav-tabs a {
+            display: block;
+            padding: 1rem;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-tabs a:hover, .nav-tabs a.active {
+            background-color: var(--dark);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .guide-step {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            background-color: var(--light);
+        }
+        
+        .calculator {
+            background-color: var(--light);
+            padding: 1rem;
+            border-radius: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: var(--dark);
+        }
+        
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: var(--light);
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .quiz-container {
+            margin-bottom: 1rem;
+        }
+        
+        .quiz-question {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--light);
+            border-radius: 5px;
+        }
+        
+        .quiz-options {
+            margin-top: 0.5rem;
+        }
+        
+        .quiz-option {
+            margin-bottom: 0.5rem;
+        }
+        
+        .quiz-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: var(--light);
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .temp-tracker {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .temp-reading {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .temp-graph {
+            height: 200px;
+            width: 100%;
+            background-color: white;
+            border: 1px solid #ddd;
+            margin-top: 1rem;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            padding: 0 10px;
+        }
+        
+        .temp-bar {
+            flex: 1;
+            max-width: 40px;
+            background-color: var(--accent);
+            transition: height 0.5s;
+            position: relative;
+        }
+        
+        .temp-bar::after {
+            content: attr(data-temp) "°F";
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+        }
+        
+        .temp-bar::before {
+            content: attr(data-date);
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        /* Updated map section styles */
+        .map-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+        
+        .location-info {
+            padding: 1rem;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .location-info h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .location-info p {
+            margin-bottom: 0.5rem;
+        }
+        
+        .location-info .address {
+            font-weight: 600;
+        }
+        
+        .location-info .accepts {
+            font-style: italic;
+            color: var(--dark);
+        }
+        
+        #location-list {
+            margin-top: 1rem;
+        }
+        
+        #locations {
+            list-style: none;
+        }
+        
+        #locations li {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #locations li:hover {
+            background-color: var(--light);
+        }
+        
+        #locations li.active {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .temp-bar {
+                max-width: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Compost Companion</h1>
+        <p>Your guide to successful composting in any setting</p>
+    </header>
+    
+    <div class="container">
+        <ul class="nav-tabs">
+            <li><a href="#guide" class="active">Step-by-Step Guide</a></li>
+            <li><a href="#calculator">Compost Calculator</a></li>
+            <li><a href="#tracker">Temperature Tracker</a></li>
+            <li><a href="#quiz">Compost Quiz</a></li>
+            <li><a href="#map">Local Drop-Offs</a></li>
+        </ul>
+        
+        <div id="guide" class="tab-content active">
+            <h2>Composting Step-by-Step Guide</h2>
+            
+            <div class="guide-step">
+                <h3>Step 1: Choose Your Composting Method</h3>
+                <p>Select a method that fits your space and needs:</p>
+                <ul>
+                    <li><strong>Urban:</strong> Bokashi bins, worm composting, electric composters</li>
+                    <li><strong>Suburban:</strong> Tumbling bins, stationary bins</li>
+                    <li><strong>Rural:</strong> Open piles, three-bin systems</li>
+                </ul>
+            </div>
+            
+            <div class="guide-step">
+                <h3>Step 2: Gather Your Materials</h3>
+                <p>You'll need a mix of "greens" (nitrogen-rich) and "browns" (carbon-rich):</p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; background-color: #E8F5E9; padding: 1rem; border-radius: 5px;">
+                        <h4>Greens (Nitrogen)</h4>
+                        <ul>
+                            <li>Fruit and vegetable scraps</li>
+                            <li>Coffee grounds</li>
+                            <li>Fresh grass clippings</li>
+                            <li>Plant trimmings</li>
+                        </ul>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background-color: #FFF3E0; padding: 1rem; border-radius: 5px;">
+                        <h4>Browns (Carbon)</h4>
+                        <ul>
+                            <li>Dry leaves</li>
+                            <li>Straw or hay</li>
+                            <li>Cardboard (shredded)</li>
+                            <li>Newspaper (shredded)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="guide-step">
+                <h3>Step 3: Build Your Pile</h3>
+                <p>Start with a layer of coarse browns for aeration. Alternate layers of greens and browns (3:1 ratio).</p>
+                <p>Moisten each layer as you build (like a wrung-out sponge).</p>
+            </div>
+            
+            <div class="guide-step">
+                <h3>Step 4: Maintain Your Compost</h3>
+                <p>Turn your pile every 1-2 weeks to aerate. Monitor moisture and temperature.</p>
+                <p>Ideal conditions: 40-60% moisture, 135-160°F temperature.</p>
+            </div>
+            
+            <div class="guide-step">
+                <h3>Step 5: Harvest Your Compost</h3>
+                <p>When the material is dark, crumbly, and earthy-smelling (3-12 months), it's ready!</p>
+                <p>Sift out any large pieces and return them to the pile.</p>
+            </div>
+            
+            <div class="guide-step">
+                <h3>Troubleshooting Common Issues</h3>
+                <div style="background-color: #FFEBEE; padding: 1rem; border-radius: 5px;">
+                    <h4>Problem: Smelly Compost</h4>
+                    <p><strong>Solution:</strong> Add more browns, turn the pile, and ensure proper drainage.</p>
+                </div>
+                <div style="background-color: #E3F2FD; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
+                    <h4>Problem: Pile Not Heating Up</h4>
+                    <p><strong>Solution:</strong> Add more greens, increase pile size, or add water if too dry.</p>
+                </div>
+                <div style="background-color: #E8F5E9; padding: 1rem; border-radius: 5px; margin-top: 1rem;">
+                    <h4>Problem: Pests Attracted</h4>
+                    <p><strong>Solution:</strong> Bury food scraps under browns, avoid meat/dairy, or use a closed bin.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="calculator" class="tab-content">
+            <h2>Compost Ratio Calculator</h2>
+            <p>Calculate the ideal carbon-to-nitrogen (C:N) ratio for your compost pile (optimal is 25-30:1).</p>
+            
+            <div class="calculator">
+                <div class="form-group">
+                    <label for="greens-type">Select Your Greens (Nitrogen) Material:</label>
+                    <select id="greens-type">
+                        <option value="food-scraps">Food Scraps (15:1)</option>
+                        <option value="grass-clippings">Fresh Grass Clippings (20:1)</option>
+                        <option value="coffee-grounds">Coffee Grounds (20:1)</option>
+                        <option value="manure">Animal Manure (15:1)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="greens-amount">Amount of Greens (in lbs or kg):</label>
+                    <input type="number" id="greens-amount" min="0" step="0.1" value="5">
+                </div>
+                
+                <div class="form-group">
+                    <label for="browns-type">Select Your Browns (Carbon) Material:</label>
+                    <select id="browns-type">
+                        <option value="dry-leaves">Dry Leaves (60:1)</option>
+                        <option value="straw">Straw (80:1)</option>
+                        <option value="paper">Paper/Newspaper (170:1)</option>
+                        <option value="sawdust">Sawdust (500:1)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="browns-amount">Amount of Browns (in lbs or kg):</label>
+                    <input type="number" id="browns-amount" min="0" step="0.1" value="5">
+                </div>
+                
+                <button onclick="calculateRatio()">Calculate Ratio</button>
+                
+                <div id="ratio-result" class="result">
+                    <h3>Your Compost Ratio</h3>
+                    <p>Carbon-to-Nitrogen Ratio: <span id="cn-ratio">0</span>:1</p>
+                    <p id="ratio-feedback"></p>
+                    <p>Recommended Adjustment: <span id="ratio-adjustment"></span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tracker" class="tab-content">
+            <h2>Compost Temperature Tracker</h2>
+            <p>Monitor your compost temperature for optimal decomposition (ideal: 135-160°F or 57-71°C).</p>
+            
+            <div class="temp-tracker">
+                <div class="form-group">
+                    <label for="temp-reading">Today's Temperature (°F):</label>
+                    <input type="number" id="temp-reading" min="0" max="200" value="120">
+                </div>
+                
+                <div class="form-group">
+                    <label for="temp-date">Date:</label>
+                    <input type="date" id="temp-date">
+                </div>
+                
+                <button onclick="addTempReading()">Add Reading</button>
+                
+                <div class="temp-graph" id="temp-graph">
+                    <!-- Temperature bars will be added here -->
+                </div>
+                
+                <div id="temp-readings">
+                    <h3>Your Temperature Log</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: var(--primary); color: white;">
+                                <th style="padding: 0.5rem; text-align: left;">Date</th>
+                                <th style="padding: 0.5rem; text-align: left;">Temperature (°F)</th>
+                                <th style="padding: 0.5rem; text-align: left;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temp-log">
+                            <!-- Temperature logs will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="temp-tips" style="margin-top: 1rem; padding: 1rem; background-color: var(--light); border-radius: 5px;">
+                    <h3>Temperature Tips</h3>
+                    <ul>
+                        <li><strong>Below 90°F:</strong> Pile is too cold. Add more greens, increase pile size, or add water.</li>
+                        <li><strong>90-135°F:</strong> Moderate activity. Continue monitoring and turning.</li>
+                        <li><strong>135-160°F:</strong> Ideal range. Microbes are most active.</li>
+                        <li><strong>Above 160°F:</strong> Too hot. Turn pile to cool down.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div id="quiz" class="tab-content">
+            <h2>Compost Knowledge Quiz</h2>
+            <p>Test your composting knowledge with this interactive quiz!</p>
+            
+            <div class="quiz-container">
+                <div class="quiz-question">
+                    <h3>Question 1: What is the ideal carbon-to-nitrogen ratio for composting?</h3>
+                    <div class="quiz-options">
+                        <div class="quiz-option">
+                            <input type="radio" name="q1" id="q1a" value="a">
+                            <label for="q1a">10:1</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q1" id="q1b" value="b">
+                            <label for="q1b">25-30:1</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q1" id="q1c" value="c">
+                            <label for="q1c">50:1</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quiz-question">
+                    <h3>Question 2: Which of these should NOT be added to a home compost pile?</h3>
+                    <div class="quiz-options">
+                        <div class="quiz-option">
+                            <input type="radio" name="q2" id="q2a" value="a">
+                            <label for="q2a">Meat and dairy products</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q2" id="q2b" value="b">
+                            <label for="q2b">Diseased plants</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q2" id="q2c" value="c">
+                            <label for="q2c">Both of the above</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quiz-question">
+                    <h3>Question 3: What does a properly maintained compost pile smell like?</h3>
+                    <div class="quiz-options">
+                        <div class="quiz-option">
+                            <input type="radio" name="q3" id="q3a" value="a">
+                            <label for="q3a">Sweet and earthy</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q3" id="q3b" value="b">
+                            <label for="q3b">Rotten eggs</label>
+                        </div>
+                        <div class="quiz-option">
+                            <input type="radio" name="q3" id="q3c" value="c">
+                            <label for="q3c">No smell at all</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="checkQuiz()">Check Answers</button>
+                
+                <div id="quiz-result" class="quiz-result">
+                    <h3>Your Results</h3>
+                    <p>You scored <span id="quiz-score">0</span> out of 3!</p>
+                    <div id="quiz-feedback"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map" class="tab-content">
+            <h2>Local Compost Drop-Off Locations</h2>
+            <p>Find nearby facilities that accept food scraps and yard waste for composting.</p>
+            
+            <div class="form-group">
+                <label for="location-search">Enter your location:</label>
+                <input type="text" id="location-search" placeholder="City, ZIP code, or address">
+                <button onclick="searchLocations()">Search</button>
+            </div>
+            
+            <div class="map-container">
+                <div id="map-container"></div>
+                <div id="location-details" class="location-info">
+                    <h3 id="location-name">Location Name</h3>
+                    <p class="address" id="location-address">123 Green Street</p>
+                    <p class="accepts" id="location-accepts">Accepts: Food scraps, yard waste</p>
+                    <p id="location-hours">Hours: Monday-Friday, 8am-5pm</p>
+                    <p id="location-notes">Notes: Bring your own container</p>
+                </div>
+            </div>
+            
+            <div id="location-list">
+                <h3>Nearby Compost Facilities</h3>
+                <ul id="locations">
+                    <!-- Locations will be added here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.nav-tabs a').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.nav-tabs a').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const target = tab.getAttribute('href');
+                document.querySelector(target).classList.add('active');
+                
+                // Initialize map if on map tab
+                if (target === '#map' && !window.mapInitialized) {
+                    initMap();
+                    window.mapInitialized = true;
+                }
+            });
+        });
+        
+        // Set current date as default for temperature tracker
+        document.getElementById('temp-date').valueAsDate = new Date();
+        
+        // Compost ratio calculator
+        const cnRatios = {
+            // Greens (Nitrogen)
+            'food-scraps': 15,
+            'grass-clippings': 20,
+            'coffee-grounds': 20,
+            'manure': 15,
+            // Browns (Carbon)
+            'dry-leaves': 60,
+            'straw': 80,
+            'paper': 170,
+            'sawdust': 500
+        };
+        
+        function calculateRatio() {
+            const greensType = document.getElementById('greens-type').value;
+            const greensAmount = parseFloat(document.getElementById('greens-amount').value);
+            const brownsType = document.getElementById('browns-type').value;
+            const brownsAmount = parseFloat(document.getElementById('browns-amount').value);
+            
+            if (isNaN(greensAmount) || isNaN(brownsAmount) || greensAmount <= 0 || brownsAmount <= 0) {
+                alert('Please enter valid amounts for both greens and browns');
+                return;
+            }
+            
+            const greensCN = cnRatios[greensType];
+            const brownsCN = cnRatios[brownsType];
+            
+            // Calculate weighted C:N ratio
+            const totalC = brownsAmount * brownsCN;
+            const totalN = greensAmount * greensCN;
+            const cnRatio = totalC / totalN;
+            
+            // Display result
+            document.getElementById('cn-ratio').textContent = cnRatio.toFixed(1);
+            document.getElementById('ratio-result').style.display = 'block';
+            
+            // Provide feedback
+            const ratioFeedback = document.getElementById('ratio-feedback');
+            const ratioAdjustment = document.getElementById('ratio-adjustment');
+            
+            if (cnRatio < 25) {
+                ratioFeedback.textContent = 'Your ratio is too low (too much nitrogen). This may cause odors.';
+                const moreBrowns = Math.ceil((totalN * 25 - totalC) / brownsCN);
+                ratioAdjustment.textContent = `Add about ${moreBrowns} more ${document.getElementById('browns-type').options[document.getElementById('browns-type').selectedIndex].text.split(' (')[0]}`;
+            } else if (cnRatio > 30) {
+                ratioFeedback.textContent = 'Your ratio is too high (too much carbon). Decomposition will be slow.';
+                const moreGreens = Math.ceil((totalC - totalN * 30) / greensCN);
+                ratioAdjustment.textContent = `Add about ${moreGreens} more ${document.getElementById('greens-type').options[document.getElementById('greens-type').selectedIndex].text.split(' (')[0]}`;
+            } else {
+                ratioFeedback.textContent = 'Great! Your ratio is in the ideal range (25-30:1).';
+                ratioAdjustment.textContent = 'No adjustment needed. Maintain your current mix.';
+            }
+        }
+        
+        // Temperature tracker
+        let tempReadings = [];
+        
+        function addTempReading() {
+            const temp = parseFloat(document.getElementById('temp-reading').value);
+            const date = document.getElementById('temp-date').value;
+            
+            if (isNaN(temp) || temp <= 0 || temp > 200) {
+                alert('Please enter a valid temperature between 0 and 200°F');
+                return;
+            }
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+            
+            // Add to readings array
+            tempReadings.push({ date, temp });
+            
+            // Sort by date
+            tempReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Update display
+            updateTempDisplay();
+            
+            // Clear input
+            document.getElementById('temp-reading').value = '';
+        }
+        
+        function updateTempDisplay() {
+            // Update graph
+            const graph = document.getElementById('temp-graph');
+            graph.innerHTML = '';
+            
+            // Find max temp for scaling
+            const maxTemp = Math.max(...tempReadings.map(r => r.temp), 160);
+            
+            tempReadings.forEach((reading, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'temp-bar';
+                bar.style.height = `${(reading.temp / maxTemp) * 100}%`;
+                bar.setAttribute('data-temp', reading.temp);
+                bar.setAttribute('data-date', reading.date.split('-').slice(1).join('/')); // MM/DD format
+                graph.appendChild(bar);
+            });
+            
+            // Update log table
+            const logBody = document.getElementById('temp-log');
+            logBody.innerHTML = '';
+            
+            tempReadings.forEach(reading => {
+                const row = document.createElement('tr');
+                
+                const dateCell = document.createElement('td');
+                dateCell.textContent = reading.date;
+                row.appendChild(dateCell);
+                
+                const tempCell = document.createElement('td');
+                tempCell.textContent = reading.temp;
+                row.appendChild(tempCell);
+                
+                const statusCell = document.createElement('td');
+                if (reading.temp < 90) {
+                    statusCell.textContent = 'Too Cold';
+                    statusCell.style.color = 'blue';
+                } else if (reading.temp >= 135 && reading.temp <= 160) {
+                    statusCell.textContent = 'Ideal';
+                    statusCell.style.color = 'green';
+                } else if (reading.temp > 160) {
+                    statusCell.textContent = 'Too Hot';
+                    statusCell.style.color = 'red';
+                } else {
+                    statusCell.textContent = 'Moderate';
+                    statusCell.style.color = 'orange';
+                }
+                row.appendChild(statusCell);
+                
+                logBody.appendChild(row);
+            });
+        }
+        
+        // Quiz functionality
+        function checkQuiz() {
+            const answers = {
+                q1: 'b', // Ideal C:N ratio is 25-30:1
+                q2: 'c', // Avoid both meat/dairy and diseased plants
+                q3: 'a'  // Should smell sweet and earthy
+            };
+            
+            let score = 0;
+            let feedback = '';
+            
+            // Check each question
+            for (let i = 1; i <= 3; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                
+                if (selected) {
+                    if (selected.value === answers[`q${i}`]) {
+                        score++;
+                    }
+                }
+                
+                // Build feedback
+                feedback += `<p><strong>Question ${i}:</strong> `;
+                if (!selected) {
+                    feedback += 'You did not answer this question. ';
+                } else if (selected.value === answers[`q${i}`]) {
+                    feedback += 'Correct! ';
+                } else {
+                    feedback += 'Incorrect. ';
+                }
+                
+                // Add explanation
+                if (i === 1) {
+                    feedback += 'The ideal carbon-to-nitrogen ratio for composting is 25-30:1.';
+                } else if (i === 2) {
+                    feedback += 'Both meat/dairy and diseased plants should be avoided in home composting.';
+                } else if (i === 3) {
+                    feedback += 'Proper compost should have a sweet, earthy smell. Bad odors indicate imbalance.';
+                }
+                
+                feedback += '</p>';
+            }
+            
+            // Display results
+            document.getElementById('quiz-score').textContent = score;
+            document.getElementById('quiz-feedback').innerHTML = feedback;
+            document.getElementById('quiz-result').style.display = 'block';
+        }
+        
+        // Map functionality
+        let map;
+        let markers = [];
+        let currentLocation = null;
+        
+        function initMap() {
+            // Create map centered on US
+            map = L.map('map-container').setView([37.8, -96], 4);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add some sample compost locations (in a real app, these would come from an API)
+            const sampleLocations = [
+                {
+                    id: 1,
+                    name: "Community Compost Collective",
+                    lat: 40.7128,
+                    lng: -74.0060,
+                    address: "123 Green St, New York, NY",
+                    accepts: "Food scraps, yard waste",
+                    hours: "Monday-Friday, 8am-5pm",
+                    notes: "Open to all residents"
+                },
+                {
+                    id: 2,
+                    name: "Urban Compost Hub",
+                    lat: 34.0522,
+                    lng: -118.2437,
+                    address: "456 Sustainable Ave, Los Angeles, CA",
+                    accepts: "Food scraps only",
+                    hours: "Daily, 7am-7pm",
+                    notes: "Free drop-off for members"
+                },
+                {
+                    id: 3,
+                    name: "City Compost Facility",
+                    lat: 41.8781,
+                    lng: -87.6298,
+                    address: "789 Recycling Rd, Chicago, IL",
+                    accepts: "Yard waste only",
+                    hours: "Tuesday-Saturday, 9am-4pm",
+                    notes: "No food waste accepted"
+                },
+                {
+                    id: 4,
+                    name: "Farmers Market Drop-Off",
+                    lat: 29.7604,
+                    lng: -95.3698,
+                    address: "321 Market St, Houston, TX",
+                    accepts: "Food scraps",
+                    hours: "Saturdays only, 8am-12pm",
+                    notes: "Seasonal operation"
+                },
+                {
+                    id: 5,
+                    name: "Public Works Composting",
+                    lat: 39.9526,
+                    lng: -75.1652,
+                    address: "654 City Hall Plaza, Philadelphia, PA",
+                    accepts: "Food scraps, yard waste",
+                    hours: "24/7 drop-off available",
+                    notes: "Bins located behind building"
+                }
+            ];
+            
+            // Add markers for sample locations
+            sampleLocations.forEach(location => {
+                const marker = L.marker([location.lat, location.lng]).addTo(map)
+                    .bindPopup(`<b>${location.name}</b><br>${location.address}<br>Accepts: ${location.accepts}`)
+                    .on('click', () => showLocationDetails(location));
+                
+                markers.push(marker);
+                
+                // Add to location list
+                const locationItem = document.createElement('li');
+                locationItem.dataset.id = location.id;
+                locationItem.innerHTML = `
+                    <strong>${location.name}</strong><br>
+                    <small>${location.address}</small><br>
+                    Accepts: ${location.accepts}
+                `;
+                locationItem.addEventListener('click', () => {
+                    // Highlight selected location
+                    document.querySelectorAll('#locations li').forEach(li => li.classList.remove('active'));
+                    locationItem.classList.add('active');
+                    
+                    // Show location on map
+                    map.setView([location.lat, location.lng], 13);
+                    marker.openPopup();
+                    
+                    // Show details
+                    showLocationDetails(location);
+                });
+                
+                document.getElementById('locations').appendChild(locationItem);
+            });
+        }
+        
+        function showLocationDetails(location) {
+            currentLocation = location;
+            
+            // Update location details panel
+            document.getElementById('location-name').textContent = location.name;
+            document.getElementById('location-address').textContent = location.address;
+            document.getElementById('location-accepts').textContent = `Accepts: ${location.accepts}`;
+            document.getElementById('location-hours').textContent = `Hours: ${location.hours}`;
+            document.getElementById('location-notes').textContent = `Notes: ${location.notes}`;
+            
+            // Show the details panel
+            document.getElementById('location-details').style.display = 'block';
+            
+            // Highlight in list
+            document.querySelectorAll('#locations li').forEach(li => {
+                li.classList.remove('active');
+                if (parseInt(li.dataset.id) === location.id) {
+                    li.classList.add('active');
+                }
+            });
+        }
+        
+        function searchLocations() {
+            const query = document.getElementById('location-search').value.trim();
+            
+            if (!query) {
+                alert('Please enter a location to search');
+                return;
+            }
+            
+            // In a real app, this would call a geocoding API and then a compost locations API
+            alert('In a complete application, this would search for compost drop-off locations near: ' + query);
+            
+            // For demo purposes, we'll just simulate a search by filtering our sample locations
+            const locationsList = document.getElementById('locations');
+            locationsList.innerHTML = '';
+            
+            const filteredLocations = [
+                {
+                    id: 6,
+                    name: `Local Compost Center (${query})`,
+                    lat: 37.7749,
+                    lng: -122.4194,
+                    address: "123 Eco Way",
+                    accepts: "Food scraps, yard waste",
+                    hours: "Monday-Saturday, 9am-5pm",
+                    notes: "Free for local residents"
+                },
+                {
+                    id: 7,
+                    name: `Recycling Facility (${query})`,
+                    lat: 37.7749,
+                    lng: -122.4294,
+                    address: "456 Green Blvd",
+                    accepts: "Yard waste only",
+                    hours: "Wednesday-Sunday, 8am-4pm",
+                    notes: "No plastic bags accepted"
+                }
+            ];
+            
+            // Add markers for filtered locations
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            filteredLocations.forEach(location => {
+                const marker = L.marker([location.lat, location.lng]).addTo(map)
+                    .bindPopup(`<b>${location.name}</b><br>${location.address}<br>Accepts: ${location.accepts}`)
+                    .on('click', () => showLocationDetails(location));
+                
+                markers.push(marker);
+                
+                // Add to location list
+                const locationItem = document.createElement('li');
+                locationItem.dataset.id = location.id;
+                locationItem.innerHTML = `
+                    <strong>${location.name}</strong><br>
+                    <small>${location.address}</small><br>
+                    Accepts: ${location.accepts}
+                `;
+                locationItem.addEventListener('click', () => {
+                    // Highlight selected location
+                    document.querySelectorAll('#locations li').forEach(li => li.classList.remove('active'));
+                    locationItem.classList.add('active');
+                    
+                    // Show location on map
+                    map.setView([location.lat, location.lng], 13);
+                    marker.openPopup();
+                    
+                    // Show details
+                    showLocationDetails(location);
+                });
+                
+                document.getElementById('locations').appendChild(locationItem);
+            });
+            
+            // Center map on first result
+            if (filteredLocations.length > 0) {
+                map.setView([filteredLocations[0].lat, filteredLocations[0].lng], 12);
+            }
+        }
+
+        // Sample data for temperature tracker (for demo purposes)
+        function loadSampleData() {
+            const today = new Date();
+            const oneDay = 24 * 60 * 60 * 1000; // milliseconds in one day
+            
+            tempReadings = [
+                { date: formatDate(new Date(today - (oneDay * 6))), temp: 100 },
+                { date: formatDate(new Date(today - (oneDay * 5))), temp: 120 },
+                { date: formatDate(new Date(today - (oneDay * 4))), temp: 140 },
+                { date: formatDate(new Date(today - (oneDay * 3))), temp: 155 },
+                { date: formatDate(new Date(today - (oneDay * 2))), temp: 145 },
+                { date: formatDate(new Date(today - oneDay)), temp: 130 },
+                { date: formatDate(today), temp: 110 }
+            ];
+            
+            updateTempDisplay();
+        }
+        
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // Load sample data when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSampleData();
+            
+            // Initialize first tab
+            document.querySelector('.nav-tabs a.active').click();
+        });
+    </script>
+</body>
+</html>
